@@ -1,6 +1,7 @@
 {
   "name": "build-tools",
-  "version": "0.1.0",
+  "type": "module",
+  "version": "0.1.1",
   "description": "Tools to build websites.",
   "main": "src/index.js",
   "scripts": {
