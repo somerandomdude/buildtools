@@ -28,6 +28,12 @@ export function setupDist(paths = []) {
   }
 }
 
+export function copyFiles(files, destination = DIST_PATH) {
+  for (let i = 0; i < files.length; i++) {
+    fs.copyFileSync(files[i], swapRootDir(files[i], destination));
+  }
+}
+
 marked.use(markedSmartypants(), customHeadingId());
 
 export function compileMarkdown(markdown, opts = {}) {
