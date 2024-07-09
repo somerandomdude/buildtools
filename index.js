@@ -3,7 +3,7 @@ import path from "path";
 import { Feed } from "feed";
 import { marked } from "marked";
 import { markedSmartypants } from "marked-smartypants";
-import { gfmHeadingId } from "marked-gfm-heading-id";
+import customHeadingId from "marked-custom-heading-id";
 import frontMatter from "front-matter";
 import sharp from "sharp";
 import { globSync } from "glob";
@@ -30,7 +30,7 @@ export function setupDist(paths = []) {
   }
 }
 
-marked.use(markedSmartypants(), gfmHeadingId());
+marked.use(markedSmartypants(), customHeadingId());
 
 export function compileMarkdown(markdown, opts = {}) {
   let entry = frontMatter(markdown);
