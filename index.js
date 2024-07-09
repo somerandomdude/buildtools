@@ -11,9 +11,7 @@ import { globSync } from "glob";
 export const SRC_PATH = "./src";
 export const DIST_PATH = "./dist";
 
-marked.setOptions({
-  mangle: false,
-});
+marked.setOptions({});
 
 export function setupDist(paths = []) {
   console.log("dist exists?", fs.existsSync(DIST_PATH));
