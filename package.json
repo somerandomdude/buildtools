@@ -1,7 +1,7 @@
 {
   "name": "build-tools",
   "type": "module",
-  "version": "0.1.1",
+  "version": "0.1.3",
   "description": "Tools to build websites.",
   "main": "src/index.js",
   "scripts": {
@@ -10,6 +10,13 @@
   "keywords": [],
   "author": "PJ Onori",
   "license": "GPL-3.0-only",
-  "devDependencies": {},
-  "dependencies": {}
+  "dependencies": {
+    "feed": "^4.2.2",
+    "front-matter": "^4.0.2",
+    "glob": "^11.0.0",
+    "marked": "^13.0.2",
+    "marked-gfm-heading-id": "^4.0.0",
+    "marked-smartypants": "^1.1.7",
+    "sharp": "^0.33.4"
+  }
 }
