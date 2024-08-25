@@ -12,6 +12,55 @@ export const SRC_PATH = "./src";
 export const DIST_PATH = "./dist";
 
 marked.setOptions({});
+marked.use(markedSmartypants(), customHeadingId());
+
+export function getFilesByType(dir, ext, fileList = []) {
+  // Read the contents of the directory
+  const files = fs.readdirSync(dir);
+
+  files.forEach((file) => {
+    // Construct the full path of the file
+    const filePath = path.join(dir, file);
+    // Get the stats of the file to check if it's a file or directory
+    const stats = fs.statSync(filePath);
+
+    if (stats.isDirectory()) {
+      // If it's a directory, recursively search within it
+      getFilesByType(filePath, ext, fileList);
+    } else if (stats.isFile() && file.endsWith(ext)) {
+      // If it's a file and ends with .js or .ts, add it to the list
+      fileList.push(filePath);
+    }
+  });
+
+  return fileList;
+}
+
+/* DEPRECATE THIS */
+export function findJsTsFiles(dir, fileList = []) {
+  // Read the contents of the directory
+  const files = fs.readdirSync(dir);
+
+  files.forEach((file) => {
+    // Construct the full path of the file
+    const filePath = path.join(dir, file);
+    // Get the stats of the file to check if it's a file or directory
+    const stats = fs.statSync(filePath);
+
+    if (stats.isDirectory()) {
+      // If it's a directory, recursively search within it
+      findJsTsFiles(filePath, fileList);
+    } else if (
+      stats.isFile() &&
+      (file.endsWith(".js") || file.endsWith(".ts"))
+    ) {
+      // If it's a file and ends with .js or .ts, add it to the list
+      fileList.push(filePath);
+    }
+  });
+
+  return fileList;
+}
 
 export function setupDist(paths = []) {
   console.log("dist exists?", fs.existsSync(DIST_PATH));
@@ -34,7 +83,15 @@ export function copyFiles(files, destination = DIST_PATH) {
   }
 }
 
-marked.use(markedSmartypants(), customHeadingId());
+export function copyAllFiles(
+  src,
+  dest,
+  filter = function () {
+    return true;
+  },
+) {
+  fs.cpSync(src, dest, { recursive: true, filter: filter });
+}
 
 export function compileMarkdown(markdown, opts = {}) {
   let entry = frontMatter(markdown);
@@ -173,32 +230,39 @@ export async function resizePng(path, output, size) {
 }
 
 export async function writeImages(contentDir = SRC_PATH, distDir = DIST_PATH) {
-  console.log("WRITE PHOTOS", contentDir + "/**/*.png");
+  //console.log("WRITE PHOTOS", contentDir + "/**/*.png");
 
   let jpgs = globSync(contentDir + "/**/*.{gif,jpg}");
   for (var i = 0; i < jpgs.length; i++) {
-    console.log(contentDir, jpgs[i]);
+    //console.log(contentDir, jpgs[i]);
     resizeJpg(jpgs[i], swapRootDir(jpgs[i], distDir), 2000);
   }
 
   let pngs = globSync(contentDir + "/**/*.png");
 
   for (var i = 0; i < pngs.length; i++) {
-    console.log(contentDir, pngs[i]);
+    //console.log(contentDir, pngs[i]);
     resizePng(pngs[i], swapRootDir(pngs[i], distDir), 2000);
   }
 
   let svgs = globSync(contentDir + "/**/*.svg");
-  console.log("SVGs", svgs);
+  //console.log("SVGs", svgs);
   for (var i = 0; i < svgs.length; i++) {
     fs.copyFileSync(svgs[i], swapRootDir(svgs[i], distDir));
   }
 
   let videos = globSync(contentDir + "/**/*.mp4");
-  console.log("Videos", videos);
+  //console.log("Videos", videos);
   for (var i = 0; i < videos.length; i++) {
     fs.copyFileSync(videos[i], swapRootDir(videos[i], distDir));
   }
+}
+
+export function extractTextByRegex(htmlString, tagName) {
+  // Create a regular expression to match the text inside the specified tag
+  const regex = new RegExp(`<${tagName}[^>]*>(.*?)</${tagName}>`, "i");
+  const match = htmlString.match(regex);
+  return match ? match[1] : null;
 }
 
 /**
