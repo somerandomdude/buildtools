@@ -1,7 +1,7 @@
 {
   "name": "build-tools",
   "type": "module",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Tools to build websites.",
   "main": "index.js",
   "scripts": {
@@ -18,6 +18,6 @@
     "marked-custom-heading-id": "^2.0.8",
     "marked-gfm-heading-id": "^4.0.0",
     "marked-smartypants": "^1.1.7",
-    "sharp": "^0.33.4"
+    "sharp": "^0.33.5"
   }
 }

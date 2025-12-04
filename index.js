@@ -100,6 +100,8 @@ export function compileMarkdown(markdown, opts = {}) {
   entry.date = new Date(entry.attributes.date);
   entry.description = entry.attributes.description;
   entry.lastmod = entry.attributes.lastmod;
+  entry.hero = entry.attributes.hero;
+  entry.hero_alt = entry.attributes.hero_alt;
   entry.content = marked(entry.body);
   entry.dateUTC = entry.lastmod
     ? new Date(entry.lastmod)
