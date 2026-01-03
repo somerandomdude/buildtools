@@ -189,10 +189,13 @@ export function writeRSS(
   feed.addCategory(rssData.category);
 
   // Output: RSS 2.0
+  /*
   fs.writeFile(writePath, feed.rss2(), (err) => {
     if (err) throw err;
     console.log("The RSS file has been saved!");
   });
+   */
+  fs.writeFileSync(writePath, feed.rss2());
 }
 
 export async function resizeJpg(path, output, size) {
