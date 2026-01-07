@@ -1,16 +1,18 @@
 {
   "name": "build-tools",
   "type": "module",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "Tools to build websites.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "keywords": [],
   "author": "PJ Onori",
   "license": "GPL-3.0-only",
   "dependencies": {
+    "@atproto/api": "^0.18.10",
     "feed": "^4.2.2",
     "front-matter": "^4.0.2",
     "glob": "^11.0.0",
@@ -18,6 +20,10 @@
     "marked-custom-heading-id": "^2.0.8",
     "marked-gfm-heading-id": "^4.0.0",
     "marked-smartypants": "^1.1.7",
+    "rss-parser": "^3.13.0",
     "sharp": "^0.33.5"
+  },
+  "devDependencies": {
+    "vitest": "^4.0.16"
   }
 }
