@@ -25,3 +25,6 @@ export { writeRSS } from "./src/writeRSS.js";
 export { resizeJpg } from "./src/resizeJpg.js";
 export { resizePng } from "./src/resizePng.js";
 export { writeImages } from "./src/writeImages.js";
+
+// Bluesky
+export { sendBlueskyPost, postLatestToBluesky } from "./src/bluesky.js";

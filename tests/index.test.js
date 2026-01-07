@@ -19,6 +19,8 @@ import {
   extractTextByRegex,
   mirrorDirectory,
   swapRootDir,
+  sendBlueskyPost,
+  postLatestToBluesky,
 } from "../index.js";
 
 // Test directory paths
@@ -1081,5 +1083,99 @@ describe("writeImages", () => {
     await expect(writeImages(TEST_DIR, "./nonexistent")).rejects.toThrow(
       "does not exist",
     );
+  });
+});
+
+describe("sendBlueskyPost", () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    // Reset environment for each test
+    process.env = { ...originalEnv };
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+    vi.restoreAllMocks();
+  });
+
+  it("should be a function", () => {
+    expect(typeof sendBlueskyPost).toBe("function");
+  });
+
+  it("should return a promise", () => {
+    // Set fake env vars so we get past validation
+    process.env.BLUESKY_USERNAME = "test";
+    process.env.BLUESKY_PASSWORD = "test";
+
+    const result = sendBlueskyPost("test");
+    expect(result).toBeInstanceOf(Promise);
+    // Catch the expected rejection (will fail on actual API call)
+    result.catch(() => {});
+  });
+
+  // Error checking tests
+  it("should throw error when text is not provided", async () => {
+    await expect(sendBlueskyPost()).rejects.toThrow("Post text is required");
+    await expect(sendBlueskyPost("")).rejects.toThrow("Post text is required");
+    await expect(sendBlueskyPost(null)).rejects.toThrow(
+      "Post text is required",
+    );
+  });
+
+  it("should throw error when BLUESKY_USERNAME is not set", async () => {
+    delete process.env.BLUESKY_USERNAME;
+    delete process.env.BLUESKY_PASSWORD;
+
+    await expect(sendBlueskyPost("Test post")).rejects.toThrow(
+      "BLUESKY_USERNAME environment variable is not set",
+    );
+  });
+
+  it("should throw error when BLUESKY_PASSWORD is not set", async () => {
+    process.env.BLUESKY_USERNAME = "testuser";
+    delete process.env.BLUESKY_PASSWORD;
+
+    await expect(sendBlueskyPost("Test post")).rejects.toThrow(
+      "BLUESKY_PASSWORD environment variable is not set",
+    );
+  });
+});
+
+describe("postLatestToBluesky", () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    process.env = { ...originalEnv };
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+    vi.restoreAllMocks();
+  });
+
+  it("should be a function", () => {
+    expect(typeof postLatestToBluesky).toBe("function");
+  });
+
+  it("should return a promise", () => {
+    const result = postLatestToBluesky();
+    expect(result).toBeInstanceOf(Promise);
+    // Catch the expected rejection
+    result.catch(() => {});
+  });
+
+  it("should fail when RSS file does not exist", async () => {
+    // Mock process.exit to prevent test from exiting
+    const exitSpy = vi.spyOn(process, "exit").mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await postLatestToBluesky();
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    exitSpy.mockRestore();
+    consoleSpy.mockRestore();
+    consoleLogSpy.mockRestore();
   });
 });

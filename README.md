@@ -355,6 +355,51 @@ await writeImages('./src/content', './dist/content');
 
 ---
 
+### Bluesky Integration
+
+#### `sendBlueskyPost(text, [url])`
+
+Sends a post to Bluesky with optional URL attachment. If a URL is provided and not already in the text, it will be appended. URLs are automatically converted to clickable links using Bluesky facets.
+
+Requires `BLUESKY_USERNAME` and `BLUESKY_PASSWORD` environment variables to be set.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `text` | `string` | The text content of the post |
+| `url` | `string` | Optional. URL to include in the post as a clickable link |
+
+**Returns:** `Promise<Object>` - The response from the Bluesky API containing the post URI
+
+```javascript
+// Post without URL
+await sendBlueskyPost('Hello from my build tool!');
+
+// Post with URL
+await sendBlueskyPost('Check out my new blog post!', 'https://example.com/post');
+```
+
+---
+
+#### `postLatestToBluesky()`
+
+Reads the latest post from the RSS feed and posts it to Bluesky if not already posted. This function performs the following steps:
+
+1. Reads the RSS feed from `./dist/rss.xml`
+2. Extracts the latest post's title and link
+3. Checks if the link has already been posted to Bluesky (searches up to 100 previous posts)
+4. If not already posted, creates a new Bluesky post with the title and link
+
+Requires `BLUESKY_USERNAME` and `BLUESKY_PASSWORD` environment variables to be set.
+
+**Returns:** `Promise<void>`
+
+```javascript
+// Typically called after generating/updating the RSS feed
+await postLatestToBluesky();
+```
+
+---
+
 ## License
 
 GPL-3.0-only
