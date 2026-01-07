@@ -6,6 +6,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import Parser from "rss-parser";
 import { loadEnvFile } from "node:process";
+import path from "node:path";
 
 try {
   loadEnvFile();
@@ -58,9 +59,8 @@ const getBlueskyAgent = async () => {
  * @returns {string} return.link - The URL link of the latest post.
  * @throws {Error} If no items are found in the RSS feed.
  */
-const getLatestRSSPost = async () => {
-  const rssPath = join(__dirname, "../dist/rss.xml");
-  const rssContent = readFileSync(rssPath, "utf8");
+const getLatestRSSPost = async (rssUrl) => {
+  const rssContent = readFileSync(rssUrl, "utf8");
 
   const parser = new Parser();
   const feed = await parser.parseString(rssContent);
@@ -253,10 +253,12 @@ export const sendBlueskyPost = async (text, url) => {
  * // Typically called after generating/updating the RSS feed
  * await postLatestToBluesky();
  */
-export const postLatestToBluesky = async () => {
+export const postLatestToBluesky = async (rssUrl) => {
+  const rssPath = path.isAbsolute(rssUrl) ? rssUrl : join(__dirname, rssUrl);
+
   try {
     console.log("Reading RSS feed...");
-    const latestPost = await getLatestRSSPost();
+    const latestPost = await getLatestRSSPost(rssPath);
 
     if (!latestPost.link) {
       throw new Error("Latest RSS post has no link");
