@@ -1171,7 +1171,7 @@ describe("postLatestToBluesky", () => {
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 
-    await postLatestToBluesky();
+    await postLatestToBluesky("./rss.xml");
 
     expect(exitSpy).toHaveBeenCalledWith(1);
     exitSpy.mockRestore();

@@ -254,10 +254,13 @@ export const sendBlueskyPost = async (text, url) => {
  * await postLatestToBluesky();
  */
 export const postLatestToBluesky = async (rssUrl) => {
+  if (!rssUrl || typeof rssUrl !== "string") {
+    throw new Error("RSS URL is required and must be a string");
+  }
+
   const rssPath = path.isAbsolute(rssUrl) ? rssUrl : join(__dirname, rssUrl);
 
   try {
-    console.log("Reading RSS feed...");
     const latestPost = await getLatestRSSPost(rssPath);
 
     if (!latestPost.link) {
