@@ -26,5 +26,11 @@ export { resizeJpg } from "./src/resizeJpg.js";
 export { resizePng } from "./src/resizePng.js";
 export { writeImages } from "./src/writeImages.js";
 
+// Inline SVG in HTML
+export { inlineSvgImages } from "./src/inlineSvgImages.js";
+
+// Generate OG Tags
+export { generateOgTags } from "./src/generateOgTags.js";
+
 // Bluesky
 export { sendBlueskyPost, postLatestToBluesky } from "./src/bluesky.js";
