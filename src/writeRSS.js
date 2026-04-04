@@ -165,7 +165,8 @@ export function writeRSS(
       title: entry.title,
       id: entry.url,
       link: entry.url,
-      content: entry.description ?? entry.content,
+      description: entry.description,
+      content: entry.content,
       author: [
         {
           name: rssData.authorName,
