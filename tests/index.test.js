@@ -732,6 +732,66 @@ describe("writeRSS", () => {
       "does not exist",
     );
   });
+
+  it("should convert root-relative image src to absolute URL", () => {
+    const entries = [
+      {
+        title: "Test Post",
+        url: "https://example.com/posts/my-post/",
+        content: '<img src="/images/photo.jpg">',
+        date: new Date("2024-01-15"),
+      },
+    ];
+    writeRSS(rssData, entries, path.join(TEST_DIST, "feed.xml"));
+    const content = fs.readFileSync(path.join(TEST_DIST, "feed.xml"), "utf8");
+    expect(content).toContain("https://example.com/images/photo.jpg");
+    expect(content).not.toContain('src="/images/');
+  });
+
+  it("should convert relative image src to absolute URL based on entry.url", () => {
+    const entries = [
+      {
+        title: "Test Post",
+        url: "https://example.com/posts/my-post/",
+        content: '<img src="../../images/photo.jpg">',
+        date: new Date("2024-01-15"),
+      },
+    ];
+    writeRSS(rssData, entries, path.join(TEST_DIST, "feed.xml"));
+    const content = fs.readFileSync(path.join(TEST_DIST, "feed.xml"), "utf8");
+    expect(content).toContain("https://example.com/images/photo.jpg");
+    expect(content).not.toContain('src="../../');
+  });
+
+  it("should leave already-absolute image src unchanged", () => {
+    const entries = [
+      {
+        title: "Test Post",
+        url: "https://example.com/posts/my-post/",
+        content: '<img src="https://cdn.example.com/photo.jpg">',
+        date: new Date("2024-01-15"),
+      },
+    ];
+    writeRSS(rssData, entries, path.join(TEST_DIST, "feed.xml"));
+    const content = fs.readFileSync(path.join(TEST_DIST, "feed.xml"), "utf8");
+    expect(content).toContain("https://cdn.example.com/photo.jpg");
+  });
+
+  it("should convert relative images in both description and content", () => {
+    const entries = [
+      {
+        title: "Test Post",
+        url: "https://example.com/posts/my-post/",
+        description: '<img src="/thumb.jpg">',
+        content: '<img src="/full.jpg">',
+        date: new Date("2024-01-15"),
+      },
+    ];
+    writeRSS(rssData, entries, path.join(TEST_DIST, "feed.xml"));
+    const content = fs.readFileSync(path.join(TEST_DIST, "feed.xml"), "utf8");
+    expect(content).toContain("https://example.com/thumb.jpg");
+    expect(content).toContain("https://example.com/full.jpg");
+  });
 });
 
 describe("extractTextByRegex", () => {
