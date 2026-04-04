@@ -748,19 +748,46 @@ describe("writeRSS", () => {
     expect(content).not.toContain('src="/images/');
   });
 
-  it("should convert relative image src to absolute URL based on entry.url", () => {
+  it("should convert bare relative image src to absolute URL based on entry.url", () => {
     const entries = [
       {
         title: "Test Post",
         url: "https://example.com/posts/my-post/",
-        content: '<img src="../../images/photo.jpg">',
+        content: '<img src="photo.jpg">',
         date: new Date("2024-01-15"),
       },
     ];
     writeRSS(rssData, entries, path.join(TEST_DIST, "feed.xml"));
     const content = fs.readFileSync(path.join(TEST_DIST, "feed.xml"), "utf8");
-    expect(content).toContain("https://example.com/images/photo.jpg");
-    expect(content).not.toContain('src="../../');
+    expect(content).toContain("https://example.com/posts/my-post/photo.jpg");
+  });
+
+  it("should convert dot-relative image src to absolute URL based on entry.url", () => {
+    const entries = [
+      {
+        title: "Test Post",
+        url: "https://example.com/posts/my-post/",
+        content: '<img src="./photo.jpg">',
+        date: new Date("2024-01-15"),
+      },
+    ];
+    writeRSS(rssData, entries, path.join(TEST_DIST, "feed.xml"));
+    const content = fs.readFileSync(path.join(TEST_DIST, "feed.xml"), "utf8");
+    expect(content).toContain("https://example.com/posts/my-post/photo.jpg");
+  });
+
+  it("should convert parent-relative image src to absolute URL based on entry.url", () => {
+    const entries = [
+      {
+        title: "Test Post",
+        url: "https://example.com/posts/my-post/",
+        content: '<img src="../images/photo.jpg">',
+        date: new Date("2024-01-15"),
+      },
+    ];
+    writeRSS(rssData, entries, path.join(TEST_DIST, "feed.xml"));
+    const content = fs.readFileSync(path.join(TEST_DIST, "feed.xml"), "utf8");
+    expect(content).toContain("https://example.com/posts/images/photo.jpg");
   });
 
   it("should leave already-absolute image src unchanged", () => {
@@ -775,6 +802,20 @@ describe("writeRSS", () => {
     writeRSS(rssData, entries, path.join(TEST_DIST, "feed.xml"));
     const content = fs.readFileSync(path.join(TEST_DIST, "feed.xml"), "utf8");
     expect(content).toContain("https://cdn.example.com/photo.jpg");
+  });
+
+  it("should handle relative entry.url when resolving image src", () => {
+    const entries = [
+      {
+        title: "Test Post",
+        url: "/posts/my-post/",
+        content: '<img src="/images/photo.jpg">',
+        date: new Date("2024-01-15"),
+      },
+    ];
+    writeRSS(rssData, entries, path.join(TEST_DIST, "feed.xml"));
+    const content = fs.readFileSync(path.join(TEST_DIST, "feed.xml"), "utf8");
+    expect(content).toContain("https://example.com/images/photo.jpg");
   });
 
   it("should convert relative images in both description and content", () => {

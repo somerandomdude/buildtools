@@ -161,12 +161,15 @@ export function writeRSS(
   });
 
   entries.forEach((entry) => {
-    const baseUrl = new URL(entry.url).origin;
+    const entryAbsoluteUrl = /^https?:\/\//i.test(entry.url)
+      ? entry.url
+      : new URL(entry.url, rssData.siteUrl).href;
+    const baseUrl = new URL(entryAbsoluteUrl).origin;
     const resolveRelativeImages = (html) => {
       if (!html) return html;
       return html.replace(/(<img\s[^>]*src=")([^"]+)(")/gi, (match, pre, src, post) => {
         if (/^https?:\/\//i.test(src)) return match;
-        const absolute = src.startsWith("/") ? baseUrl + src : new URL(src, entry.url).href;
+        const absolute = src.startsWith("/") ? baseUrl + src : new URL(src, entryAbsoluteUrl).href;
         return pre + absolute + post;
       });
     };
