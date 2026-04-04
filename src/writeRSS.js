@@ -161,17 +161,24 @@ export function writeRSS(
   });
 
   entries.forEach((entry) => {
-    const entryAbsoluteUrl = /^https?:\/\//i.test(entry.url)
+    const rawUrl = /^https?:\/\//i.test(entry.url)
       ? entry.url
       : new URL(entry.url, rssData.siteUrl).href;
+
+    const entryAbsoluteUrl = rawUrl.endsWith("/") ? rawUrl : rawUrl + "/";
     const baseUrl = new URL(entryAbsoluteUrl).origin;
     const resolveRelativeImages = (html) => {
       if (!html) return html;
-      return html.replace(/(<img\s[^>]*src=")([^"]+)(")/gi, (match, pre, src, post) => {
-        if (/^https?:\/\//i.test(src)) return match;
-        const absolute = src.startsWith("/") ? baseUrl + src : new URL(src, entryAbsoluteUrl).href;
-        return pre + absolute + post;
-      });
+      return html.replace(
+        /(<img\s[^>]*src=")([^"]+)(")/gi,
+        (match, pre, src, post) => {
+          if (/^https?:\/\//i.test(src)) return match;
+          const absolute = src.startsWith("/")
+            ? baseUrl + src
+            : new URL(src, entryAbsoluteUrl).href;
+          return pre + absolute + post;
+        },
+      );
     };
 
     feed.addItem({

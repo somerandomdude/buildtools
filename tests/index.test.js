@@ -762,6 +762,20 @@ describe("writeRSS", () => {
     expect(content).toContain("https://example.com/posts/my-post/photo.jpg");
   });
 
+  it("should handle a url with or without a trailing slash on entry.url", () => {
+    const entries = [
+      {
+        title: "Test Post",
+        url: "https://example.com/posts/my-post",
+        content: '<img src="photo.jpg">',
+        date: new Date("2024-01-15"),
+      },
+    ];
+    writeRSS(rssData, entries, path.join(TEST_DIST, "feed.xml"));
+    const content = fs.readFileSync(path.join(TEST_DIST, "feed.xml"), "utf8");
+    expect(content).toContain("https://example.com/posts/my-post/photo.jpg");
+  });
+
   it("should convert dot-relative image src to absolute URL based on entry.url", () => {
     const entries = [
       {
