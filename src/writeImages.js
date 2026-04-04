@@ -54,24 +54,21 @@ export async function writeImages(contentDir = SRC_PATH, distDir = DIST_PATH) {
     );
   }
 
-  let jpgs = globSync(contentDir + "/**/*.{gif,jpg}");
-  for (var i = 0; i < jpgs.length; i++) {
-    resizeJpg(jpgs[i], swapRootDir(jpgs[i], distDir), 2000);
-  }
+  const MAX_IMAGE_WIDTH = 2000;
+  const files = globSync(contentDir + "/**/*.{gif,jpg,png,svg,mp4}");
 
-  let pngs = globSync(contentDir + "/**/*.png");
+  const promises = files.map((file) => {
+    const dest = swapRootDir(file, distDir);
+    const ext = file.split(".").pop().toLowerCase();
 
-  for (var i = 0; i < pngs.length; i++) {
-    resizePng(pngs[i], swapRootDir(pngs[i], distDir), 2000);
-  }
+    if (ext === "jpg" || ext === "gif") {
+      return resizeJpg(file, dest, MAX_IMAGE_WIDTH);
+    }
+    if (ext === "png") {
+      return resizePng(file, dest, MAX_IMAGE_WIDTH);
+    }
+    return fs.promises.copyFile(file, dest);
+  });
 
-  let svgs = globSync(contentDir + "/**/*.svg");
-  for (var i = 0; i < svgs.length; i++) {
-    fs.copyFileSync(svgs[i], swapRootDir(svgs[i], distDir));
-  }
-
-  let videos = globSync(contentDir + "/**/*.mp4");
-  for (var i = 0; i < videos.length; i++) {
-    fs.copyFileSync(videos[i], swapRootDir(videos[i], distDir));
-  }
+  await Promise.all(promises);
 }
