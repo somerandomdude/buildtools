@@ -1472,6 +1472,18 @@ describe("sendBlueskyPost mentions", () => {
     expect(mentionFacet.index).toEqual({ byteStart, byteEnd });
   });
 
+  it("should sort facets by byteStart ascending", async () => {
+    mockResolveHandle.mockResolvedValue({ data: { did: "did:plc:abc123" } });
+
+    // mention appears after the URL in the text, so without sorting the link
+    // facet (lower byteStart) would be last in the array
+    await sendBlueskyPost("Check this @someone.bsky.social", "https://example.com/post");
+
+    const { record } = mockCreateRecord.mock.calls[0][0];
+    const byteStarts = record.facets.map((f) => f.index.byteStart);
+    expect(byteStarts).toEqual([...byteStarts].sort((a, b) => a - b));
+  });
+
   it("should not add any facets when text has no mentions and no url", async () => {
     await sendBlueskyPost("Just a plain post with no links or mentions.");
 

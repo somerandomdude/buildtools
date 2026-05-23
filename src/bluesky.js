@@ -247,7 +247,7 @@ export const sendBlueskyPost = async (text, url) => {
   }
 
   if (facets.length > 0) {
-    record.facets = facets;
+    record.facets = facets.sort((a, b) => a.index.byteStart - b.index.byteStart);
   }
 
   // Use the correct API method to create a post
