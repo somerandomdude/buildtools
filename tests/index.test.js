@@ -1,4 +1,22 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+
+const { mockCreateRecord, mockResolveHandle } = vi.hoisted(() => ({
+  mockCreateRecord: vi.fn().mockResolvedValue({ data: { uri: "at://test" } }),
+  mockResolveHandle: vi.fn(),
+}));
+
+vi.mock("@atproto/api", () => ({
+  AtpAgent: class MockAtpAgent {
+    constructor() {
+      this.login = vi.fn().mockResolvedValue({});
+      this.resolveHandle = mockResolveHandle;
+      this.session = { did: "did:plc:test", handle: "test.bsky.social" };
+      this.api = {
+        com: { atproto: { repo: { createRecord: mockCreateRecord } } },
+      };
+    }
+  },
+}));
 import fs from "fs";
 import path from "path";
 import {
@@ -1292,5 +1310,112 @@ describe("postLatestToBluesky", () => {
     exitSpy.mockRestore();
     consoleSpy.mockRestore();
     consoleLogSpy.mockRestore();
+  });
+});
+
+describe("sendBlueskyPost mentions", () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    process.env = { ...originalEnv, BLUESKY_USERNAME: "test", BLUESKY_PASSWORD: "test" };
+    vi.clearAllMocks();
+    mockCreateRecord.mockResolvedValue({ data: { uri: "at://test" } });
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it("should add a mention facet for an @handle in the text", async () => {
+    mockResolveHandle.mockResolvedValue({ data: { did: "did:plc:abc123" } });
+
+    await sendBlueskyPost("Hey @someone.bsky.social, check this out!");
+
+    const { record } = mockCreateRecord.mock.calls[0][0];
+    const encoder = new TextEncoder();
+    const text = record.text;
+    const byteStart = encoder.encode(text.slice(0, text.indexOf("@someone.bsky.social"))).length;
+    const byteEnd = byteStart + encoder.encode("@someone.bsky.social").length;
+
+    expect(record.facets).toContainEqual({
+      index: { byteStart, byteEnd },
+      features: [{ $type: "app.bsky.richtext.facet#mention", did: "did:plc:abc123" }],
+    });
+  });
+
+  it("should resolve the correct handle via resolveHandle", async () => {
+    mockResolveHandle.mockResolvedValue({ data: { did: "did:plc:abc123" } });
+
+    await sendBlueskyPost("Hello @someone.bsky.social!");
+
+    expect(mockResolveHandle).toHaveBeenCalledWith({ handle: "someone.bsky.social" });
+  });
+
+  it("should skip a mention when resolveHandle throws", async () => {
+    mockResolveHandle.mockRejectedValue(new Error("not found"));
+
+    await sendBlueskyPost("Hey @ghost.bsky.social!");
+
+    const { record } = mockCreateRecord.mock.calls[0][0];
+    expect(record.facets ?? []).not.toContainEqual(
+      expect.objectContaining({
+        features: expect.arrayContaining([
+          expect.objectContaining({ $type: "app.bsky.richtext.facet#mention" }),
+        ]),
+      }),
+    );
+  });
+
+  it("should add mention facets for multiple @handles", async () => {
+    mockResolveHandle
+      .mockResolvedValueOnce({ data: { did: "did:plc:aaa" } })
+      .mockResolvedValueOnce({ data: { did: "did:plc:bbb" } });
+
+    await sendBlueskyPost("Hi @alice.bsky.social and @bob.bsky.social!");
+
+    const { record } = mockCreateRecord.mock.calls[0][0];
+    const dids = record.facets
+      .flatMap((f) => f.features)
+      .filter((f) => f.$type === "app.bsky.richtext.facet#mention")
+      .map((f) => f.did);
+
+    expect(dids).toEqual(["did:plc:aaa", "did:plc:bbb"]);
+  });
+
+  it("should include both a mention facet and a link facet", async () => {
+    mockResolveHandle.mockResolvedValue({ data: { did: "did:plc:abc123" } });
+
+    await sendBlueskyPost("By @someone.bsky.social", "https://example.com/post");
+
+    const { record } = mockCreateRecord.mock.calls[0][0];
+    const types = record.facets.flatMap((f) => f.features).map((f) => f.$type);
+
+    expect(types).toContain("app.bsky.richtext.facet#mention");
+    expect(types).toContain("app.bsky.richtext.facet#link");
+  });
+
+  it("should compute correct byte offsets when multibyte characters precede the mention", async () => {
+    mockResolveHandle.mockResolvedValue({ data: { did: "did:plc:abc123" } });
+
+    const text = "Hello 🎉 @someone.bsky.social";
+    await sendBlueskyPost(text);
+
+    const { record } = mockCreateRecord.mock.calls[0][0];
+    const encoder = new TextEncoder();
+    const byteStart = encoder.encode(text.slice(0, text.indexOf("@someone.bsky.social"))).length;
+    const byteEnd = byteStart + encoder.encode("@someone.bsky.social").length;
+
+    const mentionFacet = record.facets.find((f) =>
+      f.features.some((feat) => feat.$type === "app.bsky.richtext.facet#mention"),
+    );
+
+    expect(mentionFacet.index).toEqual({ byteStart, byteEnd });
+  });
+
+  it("should not add any facets when text has no mentions and no url", async () => {
+    await sendBlueskyPost("Just a plain post with no links or mentions.");
+
+    const { record } = mockCreateRecord.mock.calls[0][0];
+    expect(record.facets ?? []).toHaveLength(0);
   });
 });

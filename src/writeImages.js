@@ -1,5 +1,4 @@
 import fs from "fs";
-import { globSync } from "glob";
 import { SRC_PATH, DIST_PATH } from "./constants.js";
 import { swapRootDir } from "./swapRootDir.js";
 import { resizeJpg } from "./resizeJpg.js";
@@ -55,7 +54,7 @@ export async function writeImages(contentDir = SRC_PATH, distDir = DIST_PATH) {
   }
 
   const MAX_IMAGE_WIDTH = 2000;
-  const files = globSync(contentDir + "/**/*.{gif,jpg,png,svg,mp4}");
+  const files = await Array.fromAsync(fs.promises.glob(contentDir + "/**/*.{gif,jpg,png,svg,mp4}"));
 
   const promises = files.map((file) => {
     const dest = swapRootDir(file, distDir);

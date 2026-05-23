@@ -151,6 +151,48 @@ const hasLinkBeenPosted = async (agent, link) => {
   }
 };
 
+const encoder = new TextEncoder();
+
+const byteRange = (text, substring, fromIndex) => {
+  const charIndex = text.indexOf(substring, fromIndex);
+  if (charIndex === -1) return null;
+  const byteStart = encoder.encode(text.slice(0, charIndex)).length;
+  const byteEnd = byteStart + encoder.encode(substring).length;
+  return { byteStart, byteEnd };
+};
+
+/**
+ * Scans text for @handle patterns, resolves each to a DID, and returns mention facets.
+ * Handles that cannot be resolved are silently skipped.
+ *
+ * @async
+ * @private
+ * @param {AtpAgent} agent - Authenticated Bluesky agent.
+ * @param {string} text - Post text to scan for mentions.
+ * @returns {Promise<Object[]>} Array of facet objects for each resolved mention.
+ */
+const resolveMentions = async (agent, text) => {
+  const facets = [];
+  const mentionRegex = /@([a-zA-Z0-9][a-zA-Z0-9.-]*\.[a-zA-Z]{2,})/g;
+
+  for (const match of text.matchAll(mentionRegex)) {
+    const handle = match[1];
+    try {
+      const { data } = await agent.resolveHandle({ handle });
+      const byteStart = encoder.encode(text.slice(0, match.index)).length;
+      const byteEnd = byteStart + encoder.encode(match[0]).length;
+      facets.push({
+        index: { byteStart, byteEnd },
+        features: [{ $type: "app.bsky.richtext.facet#mention", did: data.did }],
+      });
+    } catch {
+      // skip unresolvable handles
+    }
+  }
+
+  return facets;
+};
+
 /**
  * Sends a post to Bluesky with optional URL attachment.
  * If a URL is provided and not already in the text, it will be appended.
@@ -188,38 +230,24 @@ export const sendBlueskyPost = async (text, url) => {
     createdAt: new Date().toISOString(),
   };
 
+  const facets = await resolveMentions(agent, record.text);
+
   // Add URL as a facet if provided
   if (url) {
-    // Find where the URL appears in the text (or append it)
-    const urlIndex = text.indexOf(url);
-    let byteStart, byteEnd;
-
-    if (urlIndex !== -1) {
-      // URL is already in the text, create facet for it
-      byteStart = urlIndex;
-      byteEnd = urlIndex + url.length;
-    } else {
-      // URL not in text, append it
-      const separator = text.endsWith(" ") ? "" : " ";
-      record.text = text + separator + url;
-      byteStart = record.text.length - url.length;
-      byteEnd = record.text.length;
+    if (!record.text.includes(url)) {
+      const separator = record.text.endsWith(" ") ? "" : " ";
+      record.text = record.text + separator + url;
     }
 
-    record.facets = [
-      {
-        index: {
-          byteStart: byteStart,
-          byteEnd: byteEnd,
-        },
-        features: [
-          {
-            $type: "app.bsky.richtext.facet#link",
-            uri: url,
-          },
-        ],
-      },
-    ];
+    const range = byteRange(record.text, url);
+    facets.push({
+      index: range,
+      features: [{ $type: "app.bsky.richtext.facet#link", uri: url }],
+    });
+  }
+
+  if (facets.length > 0) {
+    record.facets = facets;
   }
 
   // Use the correct API method to create a post
