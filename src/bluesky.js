@@ -271,6 +271,8 @@ export const sendBlueskyPost = async (text, url) => {
  * Requires BLUESKY_USERNAME and BLUESKY_PASSWORD environment variables to be set.
  *
  * @async
+ * @param {string} rssUrl - Path to the RSS file.
+ * @param {string} [appendText] - Optional text to append to the post (e.g. an @mention).
  * @returns {Promise<void>}
  * @throws {Error} If the RSS feed cannot be read or parsed.
  * @throws {Error} If the latest RSS post has no link.
@@ -278,10 +280,10 @@ export const sendBlueskyPost = async (text, url) => {
  * @throws {Error} If BLUESKY_PASSWORD environment variable is not set.
  *
  * @example
- * // Typically called after generating/updating the RSS feed
- * await postLatestToBluesky();
+ * await postLatestToBluesky('./dist/rss.xml');
+ * await postLatestToBluesky('./dist/rss.xml', '@someone.bsky.social');
  */
-export const postLatestToBluesky = async (rssUrl) => {
+export const postLatestToBluesky = async (rssUrl, appendText) => {
   if (!rssUrl || typeof rssUrl !== "string") {
     throw new Error("RSS URL is required and must be a string");
   }
@@ -311,7 +313,8 @@ export const postLatestToBluesky = async (rssUrl) => {
     }
 
     // Create post text
-    const postText = `${latestPost.title}` || "New post";
+    const baseText = latestPost.title || "New post";
+    const postText = appendText ? `${baseText} ${appendText}` : baseText;
 
     // Post to Bluesky
     console.log("Posting to Bluesky...");

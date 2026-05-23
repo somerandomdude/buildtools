@@ -1275,6 +1275,17 @@ describe("sendBlueskyPost", () => {
   });
 });
 
+const MINIMAL_RSS = (title, link) => `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Test Feed</title>
+    <item>
+      <title>${title}</title>
+      <link>${link}</link>
+    </item>
+  </channel>
+</rss>`;
+
 describe("postLatestToBluesky", () => {
   const originalEnv = process.env;
 
@@ -1310,6 +1321,54 @@ describe("postLatestToBluesky", () => {
     exitSpy.mockRestore();
     consoleSpy.mockRestore();
     consoleLogSpy.mockRestore();
+  });
+});
+
+describe("postLatestToBluesky appendText", () => {
+  const originalEnv = process.env;
+  const rssPath = path.resolve(TEST_DIST, "rss.xml");
+
+  beforeEach(() => {
+    process.env = { ...originalEnv, BLUESKY_USERNAME: "test", BLUESKY_PASSWORD: "test" };
+    vi.clearAllMocks();
+    mockCreateRecord.mockResolvedValue({ data: { uri: "at://test" } });
+    mockResolveHandle.mockResolvedValue({ data: { did: "did:plc:abc" } });
+    fs.mkdirSync(TEST_DIST, { recursive: true });
+    fs.writeFileSync(rssPath, MINIMAL_RSS("My Post Title", "https://example.com/post"));
+    vi.spyOn(console, "log").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+    fs.rmSync(TEST_DIST, { recursive: true, force: true });
+    vi.restoreAllMocks();
+  });
+
+  it("should post only the title when no appendText is provided", async () => {
+    await postLatestToBluesky(rssPath);
+
+    const { record } = mockCreateRecord.mock.calls[0][0];
+    expect(record.text).toMatch(/^My Post Title/);
+  });
+
+  it("should append extra text to the post when provided", async () => {
+    await postLatestToBluesky(rssPath, "Some extra text");
+
+    const { record } = mockCreateRecord.mock.calls[0][0];
+    expect(record.text).toContain("My Post Title");
+    expect(record.text).toContain("Some extra text");
+  });
+
+  it("should resolve a mention in appended text", async () => {
+    await postLatestToBluesky(rssPath, "@someone.bsky.social");
+
+    expect(mockResolveHandle).toHaveBeenCalledWith({ handle: "someone.bsky.social" });
+    const { record } = mockCreateRecord.mock.calls[0][0];
+    const mentionFacet = record.facets?.find((f) =>
+      f.features.some((feat) => feat.$type === "app.bsky.richtext.facet#mention"),
+    );
+    expect(mentionFacet).toBeDefined();
+    expect(mentionFacet.features[0].did).toBe("did:plc:abc");
   });
 });
 
