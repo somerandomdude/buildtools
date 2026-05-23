@@ -312,9 +312,10 @@ export const postLatestToBluesky = async (rssUrl, appendText) => {
       return;
     }
 
-    // Create post text
+    // Create post text — link comes before appendText so it isn't pushed to the end
     const baseText = latestPost.title || "New post";
-    const postText = appendText ? `${baseText} ${appendText}` : baseText;
+    const textWithLink = `${baseText} ${latestPost.link}`;
+    const postText = appendText ? `${textWithLink} ${appendText}` : textWithLink;
 
     // Post to Bluesky
     console.log("Posting to Bluesky...");

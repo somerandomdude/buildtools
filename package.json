@@ -1,7 +1,7 @@
 {
   "name": "build-tools",
   "type": "module",
-  "version": "0.1.18",
+  "version": "0.1.19",
   "description": "Tools to build websites.",
   "main": "index.js",
   "scripts": {

@@ -1344,19 +1344,20 @@ describe("postLatestToBluesky appendText", () => {
     vi.restoreAllMocks();
   });
 
-  it("should post only the title when no appendText is provided", async () => {
+  it("should post title and link when no appendText is provided", async () => {
     await postLatestToBluesky(rssPath);
 
     const { record } = mockCreateRecord.mock.calls[0][0];
-    expect(record.text).toMatch(/^My Post Title/);
+    expect(record.text).toBe("My Post Title https://example.com/post");
   });
 
-  it("should append extra text to the post when provided", async () => {
+  it("should place the link before appendText", async () => {
     await postLatestToBluesky(rssPath, "Some extra text");
 
     const { record } = mockCreateRecord.mock.calls[0][0];
-    expect(record.text).toContain("My Post Title");
-    expect(record.text).toContain("Some extra text");
+    const linkIndex = record.text.indexOf("https://example.com/post");
+    const appendIndex = record.text.indexOf("Some extra text");
+    expect(linkIndex).toBeLessThan(appendIndex);
   });
 
   it("should resolve a mention in appended text", async () => {
